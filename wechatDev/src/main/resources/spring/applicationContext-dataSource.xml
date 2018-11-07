@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+
+
+
+<!-- Druid数据源 -->
+	 <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" lazy-init="true" init-method="init" destroy-method="close"> 
+	    <property name="url" value="${dataSource.url}" />
+	    <property name="username" value="${dataSource.username}" />
+	    <property name="password" value="${dataSource.password}" />
+	    <property name="driverClassName" value="${dataSource.driverClassName}" />
+	  
+	    <property name="initialSize" value="1" />
+	    <property name="minIdle" value="1" /> 
+	    <property name="maxActive" value="20" />
+	    
+	    <property name="maxWait" value="60000" />
+	   
+	    <property name="timeBetweenEvictionRunsMillis" value="60000" />
+	  
+	    <property name="minEvictableIdleTimeMillis" value="300000" />
+	    <property name="validationQuery" value="SELECT 1 FROM DUAL" />
+	    <property name="testWhileIdle" value="true" />
+	    <property name="testOnBorrow" value="false" />
+	    <property name="testOnReturn" value="false" />
+	    
+	    <property name="poolPreparedStatements" value="true" />
+	    <property name="maxPoolPreparedStatementPerConnectionSize" value="20" />
+	    
+	    <property name="filters" value="stat" />
+	 
+	    <property name="connectionProperties" value="druid.stat.slowSqlMillis=3000" />
+	</bean> 
+	<!-- hibernate注册 -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+				<prop key="hibernate.hbm2ddl.auto"></prop>
+				<prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate4.SpringSessionContext
+				</prop>
+				<prop key="hibernate.show_sql">true</prop>
+				<prop key="format_sql">true</prop>
+				<prop key="hibernate.default_batch_fetch_size">16</prop>
+				<prop key="hibernate.max_fetch_depth">3</prop>
+				<prop key="hibernate.query.substitutions">true 1, false 0</prop>
+			</props>
+		</property>
+		<!-- 加载hibernate的jpa注解形式的实体类 -->
+		<property name="packagesToScan">
+			<list>
+				<value>com.lex.model*</value>
+			</list>
+		</property>
+    </bean>
+    
+   
+
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<!-- 開啟註解事務 -->
+		<tx:annotation-driven transaction-manager="txManager" />
+<!--  hibernate4必须配置为开启事务 否则 getCurrentSession()获取不到 
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="create*" propagation="REQUIRED" />
+			<tx:method name="insert*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="edit*" propagation="REQUIRED" />
+			<tx:method name="merge*" propagation="REQUIRED" />
+			<tx:method name="del*" propagation="REQUIRED" />
+			<tx:method name="remove*" propagation="REQUIRED" />
+			<tx:method name="put*" propagation="REQUIRED" />
+			<tx:method name="assign*" propagation="REQUIRED" />
+			<tx:method name="upLoad*" propagation="REQUIRED" />
+			<tx:method name="reset*" propagation="REQUIRED" />
+ 			<tx:method name="audit*" propagation="REQUIRED" />
+ 			<tx:method name="review*" propagation="REQUIRED" />
+ 			<tx:method name="reject*"  propagation="REQUIRED" />
+ 			<tx:method name="show*"  propagation="REQUIRED" />
+ 			<tx:method name="admin*"  propagation="REQUIRED" />
+            <tx:method name="join*" propagation="REQUIRED" />
+            <tx:method name="active*" propagation="REQUIRED" />
+            <tx:method name="forget*" propagation="REQUIRED" />
+            <tx:method name="change*" propagation="REQUIRED" />
+            <tx:method name="set*" propagation="REQUIRED" />
+            <tx:method name="viewBorrow*" propagation="REQUIRED" />
+            <tx:method name="getMy*" propagation="REQUIRED" />
+            <tx:method name="import*" propagation="REQUIRED" />
+            <tx:method name="recent*" propagation="REQUIRED" />
+             <tx:method name="getCities" propagation="REQUIRED" />
+             <tx:method name="getDetailInfo" propagation="REQUIRED" />
+             <tx:method name="scanManco*" propagation="REQUIRED" />
+			
+			<tx:method name="get*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="count*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="find*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="list*" propagation="REQUIRED" read-only="true" />
+			<tx:method name="*" read-only="true" />
+		</tx:attributes>
+	</tx:advice>-->
+		<!-- 只对业务逻辑层实施事务
+    <aop:config expose-proxy="true">
+	<aop:pointcut id="txPointcut"
+			expression="execution(* com.lex.service..*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut" />
+	</aop:config>
+	 <aop:config expose-proxy="true">
+	
+		<aop:pointcut id="txPointcut"
+			expression="execution(* com.lex.dao..*.*(..))" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut" />
+	</aop:config>-->
+	
+
+	
+		<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+	</bean>
+
+</beans>
